@@ -5,6 +5,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.Properties;
 import java.util.Date;
+import java.util.List;
 
 public class GitHubBackupApp extends JFrame {
     private JTextField orgTextField;
@@ -26,7 +27,6 @@ public class GitHubBackupApp extends JFrame {
 
     private static void aplicarTemaOscuroTotal() {
         try {
-            // Forzar colores oscuros a nivel global del sistema de ventanas (Metal/CrossPlatform mejorado)
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             
             Color fondoOscuro = new Color(43, 45, 48);
@@ -57,7 +57,6 @@ public class GitHubBackupApp extends JFrame {
     }
 
     private void initComponents() {
-        // Fondo general de la ventana principal oscuro
         getContentPane().setBackground(new Color(43, 45, 48));
         setLayout(new BorderLayout(10, 10));
         getRootPane().setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -136,7 +135,7 @@ public class GitHubBackupApp extends JFrame {
         runButton.setBackground(new Color(40, 120, 60));
         runButton.setForeground(Color.WHITE);
         runButton.setPreferredSize(new Dimension(300, 40));
-        runButton.addActionListener(e -> ejecutarRespaldoConValidacion());
+        runButton.addActionListener(e -> iniciarProcesoRespaldo());
         bottomPanel.add(runButton);
 
         add(bottomPanel, BorderLayout.SOUTH);
@@ -192,7 +191,7 @@ public class GitHubBackupApp extends JFrame {
         }
     }
 
-    private void ejecutarRespaldoConValidacion() {
+    private void iniciarProcesoRespaldo() {
         String org = orgTextField.getText().trim();
         String name = gitNameTextField.getText().trim();
         String email = gitEmailTextField.getText().trim();
@@ -212,83 +211,96 @@ public class GitHubBackupApp extends JFrame {
         runButton.setEnabled(false);
         logTextArea.setText("");
 
-        SwingWorker<Void, String> worker = new SwingWorker<>() {
-            @Override
-            protected Void doInBackground() {
-                publish("[INFO] Verificando configuración de Git...");
-                verificarYConfigurarGit(name, email);
+        RepoBackupWorker worker = new RepoBackupWorker(org, name, email, workspaceDir);
+        worker.execute();
+    }
 
-                File[] subCarpetas = workspaceDir.listFiles(File::isDirectory);
-                if (subCarpetas == null || subCarpetas.length == 0) {
-                    publish("[INFO] No se encontraron carpetas en el directorio de trabajo.");
-                    return null;
-                }
+    private class RepoBackupWorker extends SwingWorker<Void, String> {
+        private final String org;
+        private final String name;
+        private final String email;
+        private final File workspaceDir;
 
-                publish("[INFO] Directorio seleccionado: " + workspacePath);
-                publish("[INFO] Organización de destino: " + org);
-                publish("--------------------------------------------------\n");
+        public RepoBackupWorker(String org, String name, String email, File workspaceDir) {
+            this.org = org;
+            this.name = name;
+            this.email = email;
+            this.workspaceDir = workspaceDir;
+        }
 
-                for (File carpetaProyecto : subCarpetas) {
-                    String nombreRepo = carpetaProyecto.getName();
-                    if (nombreRepo.startsWith(".")) continue;
+        @Override
+        protected Void doInBackground() {
+            publish("[INFO] Verificando configuración de Git...");
+            verificarYConfigurarGit(name, email);
 
-                    publish("Procesando carpeta: " + nombreRepo);
-
-                    File gitDir = new File(carpetaProyecto, ".git");
-                    if (!gitDir.exists()) {
-                        publish(" > Carpeta sin Git. Inicializando...");
-                        ejecutarComandoConSalida("git init", carpetaProyecto);
-                        ejecutarComandoConSalida("git branch -M main", carpetaProyecto);
-                    } else {
-                        publish(" > Repositorio Git existente encontrado.");
-                    }
-
-                    String repoFullName = org + "/" + nombreRepo;
-                    publish(" > Verificando repositorio en GitHub (" + repoFullName + ")...");
-                    
-                    int checkRepo = ejecutarCodigoSalida("gh repo view " + repoFullName, carpetaProyecto);
-                    if (checkRepo != 0) {
-                        publish(" > Creando repositorio privado en GitHub: " + repoFullName + "...");
-                        ejecutarComandoConSalida("gh repo create " + repoFullName + " --private --source=. --remote=origin", carpetaProyecto);
-                    } else {
-                        ejecutarComandoConSalida("git remote remove origin", carpetaProyecto);
-                        ejecutarComandoConSalida("git remote add origin https://github.com/" + repoFullName + ".git", carpetaProyecto);
-                    }
-
-                    publish(" > Guardando cambios locales...");
-                    ejecutarComandoConSalida("git add .", carpetaProyecto);
-                    
-                    String status = ejecutarCapturaSalida("git status --porcelain", carpetaProyecto);
-                    if (!status.isEmpty()) {
-                        ejecutarComandoConSalida("git commit -m \"Respaldo automático: " + new Date() + "\"", carpetaProyecto);
-                        publish(" > Subiendo cambios a GitHub...");
-                        ejecutarComandoConSalida("git push -u origin main", carpetaProyecto);
-                        publish(" > ¡Respaldo completado con éxito!\n");
-                    } else {
-                        publish(" > No hay cambios nuevos para respaldar.\n");
-                    }
-                    publish("--------------------------------------------------");
-                }
-
-                publish("[INFO] ¡Proceso de respaldo de todas las carpetas finalizado!");
+            File[] subCarpetas = workspaceDir.listFiles(File::isDirectory);
+            if (subCarpetas == null || subCarpetas.length == 0) {
+                publish("[INFO] No se encontraron carpetas en el directorio de trabajo.");
                 return null;
             }
 
-            @Override
-            protected void process(java.util.List<String> chunks) {
-                for (String mensaje : chunks) {
-                    logTextArea.append(mensaje + "\n");
-                    logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
+            publish("[INFO] Directorio seleccionado: " + workspaceDir.getAbsolutePath());
+            publish("[INFO] Organización de destino: " + org);
+            publish("--------------------------------------------------\n");
+
+            for (File carpetaProyecto : subCarpetas) {
+                String nombreRepo = carpetaProyecto.getName();
+                if (nombreRepo.startsWith(".")) continue;
+
+                publish("Procesando carpeta: " + nombreRepo);
+
+                File gitDir = new File(carpetaProyecto, ".git");
+                if (!gitDir.exists()) {
+                    publish(" > Carpeta sin Git. Inicializando...");
+                    ejecutarComandoConSalida("git init", carpetaProyecto);
+                    ejecutarComandoConSalida("git branch -M main", carpetaProyecto);
+                } else {
+                    publish(" > Repositorio Git existente encontrado.");
                 }
+
+                String repoFullName = org + "/" + nombreRepo;
+                publish(" > Verificando repositorio en GitHub (" + repoFullName + ")...");
+                
+                int checkRepo = ejecutarCodigoSalida("gh repo view " + repoFullName, carpetaProyecto);
+                if (checkRepo != 0) {
+                    publish(" > Creando repositorio privado en GitHub: " + repoFullName + "...");
+                    ejecutarComandoConSalida("gh repo create " + repoFullName + " --private --source=. --remote=origin", carpetaProyecto);
+                } else {
+                    ejecutarComandoConSalida("git remote remove origin", carpetaProyecto);
+                    ejecutarComandoConSalida("git remote add origin https://github.com/" + repoFullName + ".git", carpetaProyecto);
+                }
+
+                publish(" > Guardando cambios locales...");
+                ejecutarComandoConSalida("git add .", carpetaProyecto);
+                
+                String status = ejecutarCapturaSalida("git status --porcelain", carpetaProyecto);
+                if (!status.isEmpty()) {
+                    ejecutarComandoConSalida("git commit -m \"Respaldo automático: " + new Date() + "\"", carpetaProyecto);
+                    publish(" > Subiendo cambios a GitHub...");
+                    ejecutarComandoConSalida("git push -u origin main", carpetaProyecto);
+                    publish(" > ¡Respaldo completado con éxito!\n");
+                } else {
+                    publish(" > No hay cambios nuevos para respaldar.\n");
+                }
+                publish("--------------------------------------------------");
             }
 
-            @Override
-            protected void done() {
-                runButton.setEnabled(true);
-            }
-        };
+            publish("[INFO] ¡Proceso de respaldo de todas las carpetas finalizado!");
+            return null;
+        }
 
-        worker.execute();
+        @Override
+        protected void process(List<String> chunks) {
+            for (String mensaje : chunks) {
+                logTextArea.append(mensaje + "\n");
+                logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
+            }
+        }
+
+        @Override
+        protected void done() {
+            runButton.setEnabled(true);
+        }
     }
 
     private void verificarYConfigurarGit(String expectedName, String expectedEmail) {
@@ -383,7 +395,6 @@ public class GitHubBackupApp extends JFrame {
     }
 
     public static void main(String[] args) {
-        // Aplicar el tema oscuro antes de inicializar la interfaz gráfica
         aplicarTemaOscuroTotal();
         SwingUtilities.invokeLater(() -> new GitHubBackupApp().setVisible(true));
     }
