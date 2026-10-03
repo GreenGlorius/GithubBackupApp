@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest # Compilamos directamente en Windows para que jpackage cree el .exe nativo
+    runs-on: windows-latest
 
     steps:
     - name: Checkout repository
@@ -26,14 +26,7 @@ jobs:
       run: jar cfe GitHubBackup.jar GitHubBackupApp *.class
 
     - name: Create native Windows EXE using jpackage
-      run: |
-        jpackage \
-          --type app-image \
-          --name "GitHubBackup" \
-          --input . \
-          --main-jar GitHubBackup.jar \
-          --main-class GitHubBackupApp \
-          --dest output
+      run: jpackage --type app-image --name "GitHubBackup" --input . --main-jar GitHubBackup.jar --main-class GitHubBackupApp --dest output
 
     - name: Upload EXE Application Folder as Artifact
       uses: actions/upload-artifact@v4
