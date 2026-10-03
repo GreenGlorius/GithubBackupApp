@@ -22,11 +22,12 @@ jobs:
       - name: Compilar y empaquetar en JAR
         run: |
           javac GitHubBackupApp.java
-          jar cfe GitHubBackupApp.jar GitHubBackupApp GitHubBackupApp.class
+          mkdir input-dir
+          move GitHubBackupApp.jar input-dir\
 
       - name: Crear ejecutable con jpackage
         run: |
-          jpackage --type app-image --name GitHubBackup --input . --main-jar GitHubBackupApp.jar --main-class GitHubBackupApp --win-console
+          jpackage --type app-image --name GitHubBackup --input input-dir --main-jar GitHubBackupApp.jar --main-class GitHubBackupApp --win-console --verbose
 
       - name: Subir como artefacto
         uses: actions/upload-artifact@v4
