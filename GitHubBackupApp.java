@@ -27,6 +27,7 @@ public class GitHubBackupApp extends JFrame {
 
     private static void aplicarTemaOscuroTotal() {
         try {
+            // Forzar Look and Feel multiplataforma (Metal) para control total del color
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             
             Color fondoOscuro = new Color(43, 45, 48);
@@ -34,10 +35,13 @@ public class GitHubBackupApp extends JFrame {
             Color textoClaro = new Color(220, 220, 220);
             Color inputOscuro = new Color(60, 63, 65);
             Color bordeGris = new Color(80, 80, 80);
+            Color acentoSeleccion = new Color(75, 110, 175);
 
+            // Propiedades globales de Swing para modo oscuro total
             UIManager.put("Panel.background", fondoOscuro);
-            UIManager.put("OptionPane.background", fondoOscuro);
             UIManager.put("Panel.foreground", textoClaro);
+            UIManager.put("OptionPane.background", fondoOscuro);
+            UIManager.put("OptionPane.messageForeground", textoClaro);
             UIManager.put("Label.foreground", textoClaro);
             UIManager.put("TextField.background", inputOscuro);
             UIManager.put("TextField.foreground", Color.WHITE);
@@ -51,6 +55,19 @@ public class GitHubBackupApp extends JFrame {
             UIManager.put("TitledBorder.titleColor", Color.WHITE);
             UIManager.put("ScrollPane.background", fondoOscuro);
             UIManager.put("ScrollBar.background", fondoOscuro);
+            
+            // Forzar colores oscuros en selectores de archivos y diálogos estándar
+            UIManager.put("FileChooser.background", fondoOscuro);
+            UIManager.put("FileChooser.foreground", textoClaro);
+            UIManager.put("FileView.directoryIcon", null);
+            UIManager.put("FileView.fileIcon", null);
+            UIManager.put("List.background", inputOscuro);
+            UIManager.put("List.foreground", Color.WHITE);
+            UIManager.put("Table.background", inputOscuro);
+            UIManager.put("Table.foreground", Color.WHITE);
+            UIManager.put("ComboBox.background", inputOscuro);
+            UIManager.put("ComboBox.foreground", Color.WHITE);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
