@@ -9,16 +9,16 @@ public class GitHubBackupApp extends JFrame {
     private JTextField orgTextField;
     private JTextField gitNameTextField;
     private JTextField gitEmailTextField;
+    private JTextField workspaceTextField;
     private JTextArea logTextArea;
     private JButton runButton;
     private final File configFile = new File("config.properties");
 
     public GitHubBackupApp() {
-        // Aplicar aspecto visual oscuro moderno
         setDarkTheme();
 
         setTitle("GitHub Backup Manager");
-        setSize(800, 650);
+        setSize(850, 680);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         initComponents();
@@ -29,12 +29,10 @@ public class GitHubBackupApp extends JFrame {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             
-            // Paleta de colores Dark Mode
             Color darkBackground = new Color(43, 45, 48);
             Color darkPanel = new Color(60, 63, 65);
             Color textForeground = new Color(187, 187, 187);
             Color inputBackground = new Color(69, 73, 74);
-            Color accentColor = new Color(75, 110, 175);
 
             UIManager.put("Panel.background", darkBackground);
             UIManager.put("OptionPane.background", darkBackground);
@@ -44,7 +42,7 @@ public class GitHubBackupApp extends JFrame {
             UIManager.put("TextField.foreground", Color.WHITE);
             UIManager.put("TextField.caretForeground", Color.WHITE);
             UIManager.put("TextArea.background", new Color(30, 31, 34));
-            UIManager.put("TextArea.foreground", new Color(49, 231, 110)); // Estilo consola verde
+            UIManager.put("TextArea.foreground", new Color(49, 231, 110));
             UIManager.put("Button.background", darkPanel);
             UIManager.put("Button.foreground", Color.WHITE);
         } catch (Exception e) {
@@ -60,7 +58,7 @@ public class GitHubBackupApp extends JFrame {
         JPanel configPanel = new JPanel(new GridBagLayout());
         configPanel.setBorder(BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(new Color(100, 100, 100)), 
-            " 2. Configuración de Usuario y Organización ", 
+            " Configuración de Usuario, Organización y Directorio ", 
             0, 0, new Font("SansSerif", Font.BOLD, 12), Color.WHITE
         ));
 
@@ -72,14 +70,34 @@ public class GitHubBackupApp extends JFrame {
         orgTextField = new JTextField(25);
         gitNameTextField = new JTextField(25);
         gitEmailTextField = new JTextField(25);
+        workspaceTextField = new JTextField(25);
 
         addFormField(configPanel, gbc, 0, "Organización GitHub:", orgTextField, "e.g., my-org-name");
         addFormField(configPanel, gbc, 1, "Nombre (Git User):", gitNameTextField, "e.g., Dad User");
         addFormField(configPanel, gbc, 2, "Correo (Git Email):", gitEmailTextField, "e.g., dad@example.com");
 
+        // Fila especial para la Carpeta de Proyectos con botón Examinar
+        gbc.gridx = 0; gbc.gridy = 3;
+        JLabel lblWorkspace = new JLabel("Carpeta de Proyectos:");
+        lblWorkspace.setForeground(Color.WHITE);
+        configPanel.add(lblWorkspace, gbc);
+
+        JPanel workspacePanel = new JPanel(new BorderLayout(5, 0));
+        workspacePanel.setBackground(new Color(43, 45, 48));
+        workspaceTextField.setEditable(false); // Para forzar el uso del selector
+        workspacePanel.add(workspaceTextField, BorderLayout.CENTER);
+
+        JButton browseButton = new JButton("Examinar...");
+        browseButton.addActionListener(e -> seleccionarCarpetaWorkspace());
+        workspacePanel.add(browseButton, BorderLayout.EAST);
+
+        gbc.gridx = 1; 
+        configPanel.add(workspacePanel, gbc);
+
+        // Botón Guardar Configuración
         JButton saveButton = new JButton("Guardar Configuración");
         saveButton.addActionListener(e -> saveConfig());
-        gbc.gridx = 1; gbc.gridy = 3; gbc.anchor = GridBagConstraints.CENTER;
+        gbc.gridx = 1; gbc.gridy = 4; gbc.anchor = GridBagConstraints.CENTER;
         configPanel.add(saveButton, gbc);
 
         add(configPanel, BorderLayout.NORTH);
@@ -120,12 +138,23 @@ public class GitHubBackupApp extends JFrame {
         panel.add(textField, gbc);
     }
 
+    private void seleccionarCarpetaWorkspace() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        int option = fileChooser.showOpenDialog(this);
+        if (option == JFileChooser.APPROVE_OPTION) {
+            File selectedDir = fileChooser.getSelectedFile();
+            workspaceTextField.setText(selectedDir.getAbsolutePath());
+        }
+    }
+
     private void saveConfig() {
         try (OutputStream output = new FileOutputStream(configFile)) {
             Properties prop = new Properties();
             prop.setProperty("github.org", orgTextField.getText().trim());
             prop.setProperty("git.name", gitNameTextField.getText().trim());
             prop.setProperty("git.email", gitEmailTextField.getText().trim());
+            prop.setProperty("workspace.dir", workspaceTextField.getText().trim());
             prop.store(output, null);
             logTextArea.append("[INFO] Configuración guardada correctamente.\n");
         } catch (IOException io) {
@@ -141,6 +170,7 @@ public class GitHubBackupApp extends JFrame {
                 orgTextField.setText(prop.getProperty("github.org", ""));
                 gitNameTextField.setText(prop.getProperty("git.name", ""));
                 gitEmailTextField.setText(prop.getProperty("git.email", ""));
+                workspaceTextField.setText(prop.getProperty("workspace.dir", ""));
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
@@ -150,22 +180,30 @@ public class GitHubBackupApp extends JFrame {
     private void ejecutarRespaldoConValidacion() {
         String name = gitNameTextField.getText().trim();
         String email = gitEmailTextField.getText().trim();
+        String workspacePath = workspaceTextField.getText().trim();
 
-        if (name.isEmpty() || email.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Por favor completa el Nombre y Correo de Git antes de continuar.", "Advertencia", JOptionPane.WARNING_MESSAGE);
+        if (name.isEmpty() || email.isEmpty() || workspacePath.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Por favor completa todos los campos y selecciona la carpeta de proyectos.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // Validar y configurar Git localmente si es necesario
+        File workspaceDir = new File(workspacePath);
+        if (!workspaceDir.exists() || !workspaceDir.isDirectory()) {
+            JOptionPane.showMessageDialog(this, "La carpeta de proyectos seleccionada no es válida.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validar y configurar Git localmente
         verificarYConfigurarGit(name, email);
 
-        // Aquí continúa tu lógica de escaneo y respaldo de carpetas...
-        logTextArea.append("[INFO] Iniciando proceso de respaldo...\n");
+        logTextArea.append("[INFO] Directorio de trabajo seleccionado: " + workspacePath + "\n");
+        logTextArea.append("[INFO] Iniciando proceso de respaldo de repositorios...\n");
+        
+        // Aquí puedes usar 'workspaceDir' para recorrer las subcarpetas de los proyectos de tu papá
     }
 
     private void verificarYConfigurarGit(String expectedName, String expectedEmail) {
         try {
-            // Verificar usuario actual configurado en Git
             String currentName = ejecutarComandoGit("git config --global user.name");
             String currentEmail = ejecutarComandoGit("git config --global user.email");
 
