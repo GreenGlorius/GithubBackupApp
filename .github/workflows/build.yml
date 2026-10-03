@@ -1,37 +1,32 @@
-name: Build Windows Executable
+name: Build Java App
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
-  build-windows:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Clonar repositorio
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Configurar Java (JDK)
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'temurin'
-          java-version: '21'
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
 
-      - name: Compilar y empaquetar en JAR
-        run: |
-          javac GitHubBackupApp.java
-          jar --create --file=GitHubBackupApp.jar --main-class=GitHubBackupApp GitHubBackupApp.class
-          New-Item -ItemType Directory -Force -Path input-dir
-          Move-Item GitHubBackupApp.jar -Destination input-dir\
+    - name: Compile Java source files
+      run: javac GitHubBackupApp.java
 
-      - name: Crear ejecutable con jpackage
-        run: |
-          jpackage --type app-image --name GitHubBackup --input input-dir --main-jar GitHubBackupApp.jar --main-class GitHubBackupApp --win-console --verbose
+    - name: Package into JAR including all generated classes
+      run: jar cfe GitHubBackup.jar GitHubBackupApp *.class
 
-      - name: Subir como artefacto
-        uses: actions/upload-artifact@v4
-        with:
-          name: GitHubBackup-Windows
-          path: GitHubBackup/
+    - name: Upload JAR artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GitHubBackupApp
+        path: GitHubBackup.jar
