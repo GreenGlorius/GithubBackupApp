@@ -4,6 +4,7 @@ import java.awt.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.Properties;
+import java.util.Date;
 
 public class GitHubBackupApp extends JFrame {
     private JTextField orgTextField;
@@ -15,49 +16,57 @@ public class GitHubBackupApp extends JFrame {
     private final File configFile = new File("config.properties");
 
     public GitHubBackupApp() {
-        setDarkTheme();
-
         setTitle("GitHub Backup Manager");
-        setSize(850, 680);
+        setSize(850, 700);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         initComponents();
         loadConfig();
     }
 
-    private void setDarkTheme() {
+    private static void aplicarTemaOscuroTotal() {
         try {
+            // Forzar colores oscuros a nivel global del sistema de ventanas (Metal/CrossPlatform mejorado)
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             
-            Color darkBackground = new Color(43, 45, 48);
-            Color darkPanel = new Color(60, 63, 65);
-            Color textForeground = new Color(187, 187, 187);
-            Color inputBackground = new Color(69, 73, 74);
+            Color fondoOscuro = new Color(43, 45, 48);
+            Color panelOscuro = new Color(49, 51, 53);
+            Color textoClaro = new Color(220, 220, 220);
+            Color inputOscuro = new Color(60, 63, 65);
+            Color bordeGris = new Color(80, 80, 80);
 
-            UIManager.put("Panel.background", darkBackground);
-            UIManager.put("OptionPane.background", darkBackground);
-            UIManager.put("Panel.foreground", textForeground);
-            UIManager.put("Label.foreground", textForeground);
-            UIManager.put("TextField.background", inputBackground);
+            UIManager.put("Panel.background", fondoOscuro);
+            UIManager.put("OptionPane.background", fondoOscuro);
+            UIManager.put("Panel.foreground", textoClaro);
+            UIManager.put("Label.foreground", textoClaro);
+            UIManager.put("TextField.background", inputOscuro);
             UIManager.put("TextField.foreground", Color.WHITE);
             UIManager.put("TextField.caretForeground", Color.WHITE);
+            UIManager.put("TextField.border", BorderFactory.createLineBorder(bordeGris));
             UIManager.put("TextArea.background", new Color(30, 31, 34));
             UIManager.put("TextArea.foreground", new Color(49, 231, 110));
-            UIManager.put("Button.background", darkPanel);
+            UIManager.put("Button.background", panelOscuro);
             UIManager.put("Button.foreground", Color.WHITE);
+            UIManager.put("Button.border", BorderFactory.createLineBorder(bordeGris));
+            UIManager.put("TitledBorder.titleColor", Color.WHITE);
+            UIManager.put("ScrollPane.background", fondoOscuro);
+            UIManager.put("ScrollBar.background", fondoOscuro);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     private void initComponents() {
+        // Fondo general de la ventana principal oscuro
+        getContentPane().setBackground(new Color(43, 45, 48));
         setLayout(new BorderLayout(10, 10));
         getRootPane().setBorder(new EmptyBorder(10, 10, 10, 10));
 
         // Panel Superior: Configuración
         JPanel configPanel = new JPanel(new GridBagLayout());
+        configPanel.setBackground(new Color(43, 45, 48));
         configPanel.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(100, 100, 100)), 
+            BorderFactory.createLineBorder(new Color(90, 93, 95)), 
             " Configuración de Usuario, Organización y Directorio ", 
             0, 0, new Font("SansSerif", Font.BOLD, 12), Color.WHITE
         ));
@@ -76,7 +85,7 @@ public class GitHubBackupApp extends JFrame {
         addFormField(configPanel, gbc, 1, "Nombre (Git User):", gitNameTextField, "e.g., Dad User");
         addFormField(configPanel, gbc, 2, "Correo (Git Email):", gitEmailTextField, "e.g., dad@example.com");
 
-        // Fila especial para la Carpeta de Proyectos con botón Examinar
+        // Fila para la Carpeta de Proyectos con botón Examinar
         gbc.gridx = 0; gbc.gridy = 3;
         JLabel lblWorkspace = new JLabel("Carpeta de Proyectos:");
         lblWorkspace.setForeground(Color.WHITE);
@@ -84,10 +93,12 @@ public class GitHubBackupApp extends JFrame {
 
         JPanel workspacePanel = new JPanel(new BorderLayout(5, 0));
         workspacePanel.setBackground(new Color(43, 45, 48));
-        workspaceTextField.setEditable(false); // Para forzar el uso del selector
+        workspaceTextField.setEditable(false);
         workspacePanel.add(workspaceTextField, BorderLayout.CENTER);
 
         JButton browseButton = new JButton("Examinar...");
+        browseButton.setBackground(new Color(60, 63, 65));
+        browseButton.setForeground(Color.WHITE);
         browseButton.addActionListener(e -> seleccionarCarpetaWorkspace());
         workspacePanel.add(browseButton, BorderLayout.EAST);
 
@@ -96,6 +107,8 @@ public class GitHubBackupApp extends JFrame {
 
         // Botón Guardar Configuración
         JButton saveButton = new JButton("Guardar Configuración");
+        saveButton.setBackground(new Color(60, 63, 65));
+        saveButton.setForeground(Color.WHITE);
         saveButton.addActionListener(e -> saveConfig());
         gbc.gridx = 1; gbc.gridy = 4; gbc.anchor = GridBagConstraints.CENTER;
         configPanel.add(saveButton, gbc);
@@ -107,8 +120,9 @@ public class GitHubBackupApp extends JFrame {
         logTextArea.setEditable(false);
         logTextArea.setFont(new Font("Consolas", Font.PLAIN, 12));
         JScrollPane scrollPane = new JScrollPane(logTextArea);
+        scrollPane.setBackground(new Color(43, 45, 48));
         scrollPane.setBorder(BorderFactory.createTitledBorder(
-            BorderFactory.createLineBorder(new Color(100, 100, 100)), 
+            BorderFactory.createLineBorder(new Color(90, 93, 95)), 
             " Registro de Actividad ", 
             0, 0, new Font("SansSerif", Font.BOLD, 12), Color.WHITE
         ));
@@ -116,6 +130,7 @@ public class GitHubBackupApp extends JFrame {
 
         // Panel Inferior: Botón de Ejecución
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        bottomPanel.setBackground(new Color(43, 45, 48));
         runButton = new JButton("Iniciar Respaldo de Carpetas");
         runButton.setFont(new Font("SansSerif", Font.BOLD, 14));
         runButton.setBackground(new Color(40, 120, 60));
@@ -178,11 +193,12 @@ public class GitHubBackupApp extends JFrame {
     }
 
     private void ejecutarRespaldoConValidacion() {
+        String org = orgTextField.getText().trim();
         String name = gitNameTextField.getText().trim();
         String email = gitEmailTextField.getText().trim();
         String workspacePath = workspaceTextField.getText().trim();
 
-        if (name.isEmpty() || email.isEmpty() || workspacePath.isEmpty()) {
+        if (org.isEmpty() || name.isEmpty() || email.isEmpty() || workspacePath.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Por favor completa todos los campos y selecciona la carpeta de proyectos.", "Advertencia", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -193,13 +209,86 @@ public class GitHubBackupApp extends JFrame {
             return;
         }
 
-        // Validar y configurar Git localmente
-        verificarYConfigurarGit(name, email);
+        runButton.setEnabled(false);
+        logTextArea.setText("");
 
-        logTextArea.append("[INFO] Directorio de trabajo seleccionado: " + workspacePath + "\n");
-        logTextArea.append("[INFO] Iniciando proceso de respaldo de repositorios...\n");
-        
-        // Aquí puedes usar 'workspaceDir' para recorrer las subcarpetas de los proyectos de tu papá
+        SwingWorker<Void, String> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                publish("[INFO] Verificando configuración de Git...");
+                verificarYConfigurarGit(name, email);
+
+                File[] subCarpetas = workspaceDir.listFiles(File::isDirectory);
+                if (subCarpetas == null || subCarpetas.length == 0) {
+                    publish("[INFO] No se encontraron carpetas en el directorio de trabajo.");
+                    return null;
+                }
+
+                publish("[INFO] Directorio seleccionado: " + workspacePath);
+                publish("[INFO] Organización de destino: " + org);
+                publish("--------------------------------------------------\n");
+
+                for (File carpetaProyecto : subCarpetas) {
+                    String nombreRepo = carpetaProyecto.getName();
+                    if (nombreRepo.startsWith(".")) continue;
+
+                    publish("Procesando carpeta: " + nombreRepo);
+
+                    File gitDir = new File(carpetaProyecto, ".git");
+                    if (!gitDir.exists()) {
+                        publish(" > Carpeta sin Git. Inicializando...");
+                        ejecutarComandoConSalida("git init", carpetaProyecto);
+                        ejecutarComandoConSalida("git branch -M main", carpetaProyecto);
+                    } else {
+                        publish(" > Repositorio Git existente encontrado.");
+                    }
+
+                    String repoFullName = org + "/" + nombreRepo;
+                    publish(" > Verificando repositorio en GitHub (" + repoFullName + ")...");
+                    
+                    int checkRepo = ejecutarCodigoSalida("gh repo view " + repoFullName, carpetaProyecto);
+                    if (checkRepo != 0) {
+                        publish(" > Creando repositorio privado en GitHub: " + repoFullName + "...");
+                        ejecutarComandoConSalida("gh repo create " + repoFullName + " --private --source=. --remote=origin", carpetaProyecto);
+                    } else {
+                        ejecutarComandoConSalida("git remote remove origin", carpetaProyecto);
+                        ejecutarComandoConSalida("git remote add origin https://github.com/" + repoFullName + ".git", carpetaProyecto);
+                    }
+
+                    publish(" > Guardando cambios locales...");
+                    ejecutarComandoConSalida("git add .", carpetaProyecto);
+                    
+                    String status = ejecutarCapturaSalida("git status --porcelain", carpetaProyecto);
+                    if (!status.isEmpty()) {
+                        ejecutarComandoConSalida("git commit -m \"Respaldo automático: " + new Date() + "\"", carpetaProyecto);
+                        publish(" > Subiendo cambios a GitHub...");
+                        ejecutarComandoConSalida("git push -u origin main", carpetaProyecto);
+                        publish(" > ¡Respaldo completado con éxito!\n");
+                    } else {
+                        publish(" > No hay cambios nuevos para respaldar.\n");
+                    }
+                    publish("--------------------------------------------------");
+                }
+
+                publish("[INFO] ¡Proceso de respaldo de todas las carpetas finalizado!");
+                return null;
+            }
+
+            @Override
+            protected void process(java.util.List<String> chunks) {
+                for (String mensaje : chunks) {
+                    logTextArea.append(mensaje + "\n");
+                    logTextArea.setCaretPosition(logTextArea.getDocument().getLength());
+                }
+            }
+
+            @Override
+            protected void done() {
+                runButton.setEnabled(true);
+            }
+        };
+
+        worker.execute();
     }
 
     private void verificarYConfigurarGit(String expectedName, String expectedEmail) {
@@ -237,7 +326,65 @@ public class GitHubBackupApp extends JFrame {
         }
     }
 
+    private void ejecutarComandoConSalida(String comando, File directorio) {
+        try {
+            ProcessBuilder builder;
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                builder = new ProcessBuilder("cmd.exe", "/c", comando);
+            } else {
+                builder = new ProcessBuilder("bash", "-c", comando);
+            }
+            builder.directory(directorio);
+            builder.redirectErrorStream(true);
+            Process process = builder.start();
+            process.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private int ejecutarCodigoSalida(String comando, File directorio) {
+        try {
+            ProcessBuilder builder;
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                builder = new ProcessBuilder("cmd.exe", "/c", comando);
+            } else {
+                builder = new ProcessBuilder("bash", "-c", comando);
+            }
+            builder.directory(directorio);
+            Process process = builder.start();
+            return process.waitFor();
+        } catch (Exception e) {
+            return -1;
+        }
+    }
+
+    private String ejecutarCapturaSalida(String comando, File directorio) {
+        try {
+            ProcessBuilder builder;
+            if (System.getProperty("os.name").toLowerCase().contains("win")) {
+                builder = new ProcessBuilder("cmd.exe", "/c", comando);
+            } else {
+                builder = new ProcessBuilder("bash", "-c", comando);
+            }
+            builder.directory(directorio);
+            Process process = builder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            process.waitFor();
+            return sb.toString().trim();
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
     public static void main(String[] args) {
+        // Aplicar el tema oscuro antes de inicializar la interfaz gráfica
+        aplicarTemaOscuroTotal();
         SwingUtilities.invokeLater(() -> new GitHubBackupApp().setVisible(true));
     }
 }
