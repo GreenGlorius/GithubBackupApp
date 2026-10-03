@@ -1,0 +1,35 @@
+name: Build Windows Executable
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Java (JDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Compilar y empaquetar en JAR
+        run: |
+          javac GithubBackupApp.java
+          jar cfe GithubBackupApp.jar GithubBackupApp GithubBackupApp.class
+
+      - name: Crear ejecutable con jpackage
+        run: |
+          jpackage --type app-image --name GitHubBackup --input . --main-jar GithubBackupApp.jar --main-class GithubBackupApp
+
+      - name: Subir como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: GitHubBackup-Windows
+          path: GitHubBackup/
