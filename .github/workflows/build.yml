@@ -14,19 +14,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configurar Java (JDK)
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
 
       - name: Compilar y empaquetar en JAR
         run: |
-          javac GithubBackupApp.java
-          jar cfe GithubBackupApp.jar GithubBackupApp GithubBackupApp.class
+          javac GitHubBackupApp.java
+          jar cfe GitHubBackupApp.jar GitHubBackupApp GitHubBackupApp.class
 
       - name: Crear ejecutable con jpackage
         run: |
-          jpackage --type app-image --name GitHubBackup --input . --main-jar GithubBackupApp.jar --main-class GithubBackupApp
+          jpackage --type app-image --name GitHubBackup --input . --main-jar GitHubBackupApp.jar --main-class GitHubBackupApp --win-console
 
       - name: Subir como artefacto
         uses: actions/upload-artifact@v4
