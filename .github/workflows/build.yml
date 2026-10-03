@@ -22,8 +22,9 @@ jobs:
       - name: Compilar y empaquetar en JAR
         run: |
           javac GitHubBackupApp.java
-          mkdir input-dir
-          move GitHubBackupApp.jar input-dir\
+          jar --create --file=GitHubBackupApp.jar --main-class=GitHubBackupApp GitHubBackupApp.class
+          New-Item -ItemType Directory -Force -Path input-dir
+          Move-Item GitHubBackupApp.jar -Destination input-dir\
 
       - name: Crear ejecutable con jpackage
         run: |
