@@ -27,12 +27,10 @@ public class GitHubBackupApp extends JFrame {
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
 
-        // Panel Superior Combinado (Prerrequisitos + Configuración de Git/GitHub)
         JPanel topContainer = new JPanel();
         topContainer.setLayout(new BoxLayout(topContainer, BoxLayout.Y_AXIS));
         topContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 0, 10));
 
-        // 1. Subpanel de Ayuda / Prerrequisitos
         JPanel prereqPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         prereqPanel.setBorder(BorderFactory.createTitledBorder("1. ¿Te falta algún programa? (Instálalos primero)"));
         
@@ -48,35 +46,30 @@ public class GitHubBackupApp extends JFrame {
         prereqPanel.add(btnGh);
         topContainer.add(prereqPanel);
 
-        // 2. Subpanel de Configuración de Credenciales y Organización
         JPanel configPanel = new JPanel(new GridBagLayout());
         configPanel.setBorder(BorderFactory.createTitledBorder("2. Configuración de Usuario y Organización"));
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Fila 1: Organización de GitHub
         gbc.gridx = 0; gbc.gridy = 0;
         configPanel.add(new JLabel("Organización GitHub:"), gbc);
         gbc.gridx = 1; 
         orgTextField = new JTextField(22);
         configPanel.add(orgTextField, gbc);
 
-        // Fila 2: Nombre de Usuario para Git
         gbc.gridx = 0; gbc.gridy = 1;
         configPanel.add(new JLabel("Nombre (Git User):"), gbc);
         gbc.gridx = 1; 
         gitNameTextField = new JTextField(22);
         configPanel.add(gitNameTextField, gbc);
 
-        // Fila 3: Correo electrónico para Git
         gbc.gridx = 0; gbc.gridy = 2;
         configPanel.add(new JLabel("Correo (Git Email):"), gbc);
         gbc.gridx = 1; 
         gitEmailTextField = new JTextField(22);
         configPanel.add(gitEmailTextField, gbc);
 
-        // Botón Guardar Configuración
         gbc.gridx = 1; gbc.gridy = 3;
         JButton saveButton = new JButton("Guardar Configuración");
         saveButton.setBackground(new Color(70, 130, 180));
@@ -88,7 +81,6 @@ public class GitHubBackupApp extends JFrame {
         topContainer.add(configPanel);
         add(topContainer, BorderLayout.NORTH);
 
-        // Panel Central (Consola de Logs)
         JPanel centerPanel = new JPanel(new BorderLayout(5, 5));
         centerPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         centerPanel.add(new JLabel("Registro de Actividad:"), BorderLayout.NORTH);
@@ -103,7 +95,6 @@ public class GitHubBackupApp extends JFrame {
         centerPanel.add(scrollPane, BorderLayout.CENTER);
         add(centerPanel, BorderLayout.CENTER);
 
-        // Panel Inferior (Botón de ejecución)
         JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         runButton = new JButton("Iniciar Respaldo de Carpetas");
         runButton.setFont(new Font("Arial", Font.BOLD, 12));
@@ -153,7 +144,6 @@ public class GitHubBackupApp extends JFrame {
             return;
         }
 
-        // 1. Guardar en el archivo properties local
         Properties props = new Properties();
         props.setProperty("orgName", orgName);
         props.setProperty("gitName", gitName);
@@ -166,7 +156,6 @@ public class GitHubBackupApp extends JFrame {
             return;
         }
 
-        // 2. Aplicar automáticamente la configuración global a Git en la PC del usuario
         try {
             ProcessBuilder pbName = new ProcessBuilder("git", "config", "--global", "user.name", gitName);
             ProcessBuilder pbEmail = new ProcessBuilder("git", "config", "--global", "user.email", gitEmail);
@@ -240,16 +229,14 @@ public class GitHubBackupApp extends JFrame {
                     }
 
                     executeCommand(folder, "git", "add", ".");
-                    executeCommand(folder, "git", "commit", -1, "-m", "Primer commit automatico (creacion inicial)");
+                    executeCommand(folder, "git", "commit", "-m", "Primer commit automatico (creacion inicial)");
 
                     log("-> Creando repositorio privado en GitHub: " + orgName + "/" + folder.getName() + "...");
                     
-                    // Ejecutar y capturar tanto salida normal como errores (para detectar si la org no existe)
                     ProcessBuilder pb = new ProcessBuilder("gh", "repo", orgName + "/" + folder.getName(), "--private", "--source=.", "--remote=origin", "--push");
                     pb.directory(folder);
                     Process process = pb.start();
 
-                    // Leer la salida de error (stderr) por si falla
                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
                     StringBuilder errorMsg = new StringBuilder();
                     String errorLine;
@@ -275,11 +262,10 @@ public class GitHubBackupApp extends JFrame {
                         executeCommand(folder, "git", "add", ".");
                         
                         String fecha = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date());
-                        executeCommand(folder, "git", "commit", -1, "-m", "Respaldo automatico: " + fecha);
+                        executeCommand(folder, "git", "commit", "-m", "Respaldo automatico: " + fecha);
                         
                         log("-> Subiendo cambios a GitHub...");
                         
-                        // Intentar hacer push y capturar errores si la organización o el remoto fallan
                         ProcessBuilder pbPush = new ProcessBuilder("git", "push");
                         pbPush.directory(folder);
                         Process processPush = pbPush.start();
@@ -319,17 +305,11 @@ public class GitHubBackupApp extends JFrame {
         }
     }
 
-    // Método auxiliar genérico para ejecutar comandos simples
     private int executeCommand(File workingDir, String... command) throws IOException, InterruptedException {
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(workingDir);
         Process process = pb.start();
         return process.waitFor();
-    }
-
-    // Sobrecarga por si se pasa un entero intermedio (para compatibilidad de firma si se desea)
-    private int executeCommand(File workingDir, int dummy, String... command) throws IOException, InterruptedException {
-        return executeCommand(workingDir, command);
     }
 
     private String executeCommandOutput(File workingDir, String... command) throws IOException, InterruptedException {
